@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#08212d" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2308212d'/%3E%3Cpath d='M10 38l22-7 10-15 10 15v7H10z' fill='%23f2c96b'/%3E%3C/svg%3E"
+    />
+    <meta
+      name="description"
+      content="Age of Wind Web - 原创低多边形 3D 海战游戏 MVP"
+    />
+    <title>Age of Wind Web</title>
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game-canvas" aria-label="3D 海战游戏画面"></canvas>
+
+      <div id="hud" class="hud is-hidden">
+        <div class="hud-top">
+          <section class="panel vitals-panel">
+            <div class="vitals-head">
+              <span class="ship-name">海风号</span>
+              <span id="speed-text" class="subtle">航速 0 节</span>
+            </div>
+            <div class="hp-row">
+              <span class="bar-label">船体</span>
+              <div class="bar hp-bar"><i id="hp-fill"></i></div>
+              <span id="hp-text" class="bar-value">100 / 100</span>
+            </div>
+            <div class="vitals-sub">
+              <span id="kills-text">击沉 0 / 5</span>
+              <span class="subtle help-inline">SPACE 开炮 · E 停靠</span>
+            </div>
+          </section>
+
+          <section class="panel enemy-panel">
+            <div class="enemy-head">
+              <span>敌情</span>
+              <span id="enemy-count" class="enemy-count">0</span>
+            </div>
+            <div id="enemy-list" class="enemy-list">
+              <span class="enemy-empty">尚未发现敌舰</span>
+            </div>
+          </section>
+
+          <div class="top-right-stack">
+            <div class="panel coin-panel">
+              <span class="coin-icon" aria-hidden="true">◈</span>
+              <span id="coin-text">0</span>
+            </div>
+            <button
+              id="pause-btn"
+              class="icon-btn"
+              type="button"
+              aria-label="暂停游戏"
+            >
+              Ⅱ
+            </button>
+          </div>
+        </div>
+
+        <div class="hud-bottom">
+          <div id="harbor-prompt" class="harbor-prompt is-hidden">
+            <span class="dock-pulse" aria-hidden="true"></span>
+            <span>进入港口水域</span>
+            <button id="dock-btn" class="btn small" type="button">
+              停靠 · E
+            </button>
+          </div>
+          <div id="reload-wrap" class="reload-wrap">
+            <span id="reload-text">火炮就绪</span>
+            <div class="reload-bar"><i id="reload-fill"></i></div>
+          </div>
+        </div>
+
+        <div id="toast-area" class="toast-area" aria-live="polite"></div>
+        <div id="damage-vignette" class="damage-vignette" aria-hidden="true"></div>
+      </div>
+
+      <div id="touch-controls" class="touch-controls is-hidden">
+        <div id="joystick" class="joystick" aria-label="虚拟摇杆">
+          <div class="joystick-base"></div>
+          <div id="joystick-knob" class="joystick-knob"></div>
+          <span class="joystick-label">航行</span>
+        </div>
+        <button id="fire-button" class="fire-button" type="button">
+          <span>开炮</span>
+          <small>按住连射</small>
+        </button>
+      </div>
+
+      <div id="start-screen" class="overlay screen">
+        <div class="screen-card start-card">
+          <p class="eyebrow">原创低多边形海战 · 浏览器 MVP</p>
+          <h1 class="game-title">AGE OF WIND <span>WEB</span></h1>
+          <p class="subtitle">
+            掌舵、抢位、开炮。击沉 5 艘敌舰，带着金币回港升级，再驶向下一片海域。
+          </p>
+
+          <div class="start-stats">
+            <div class="start-stat">
+              <span>金币</span>
+              <strong><i class="coin-icon">◈</i><span id="start-coins">0</span></strong>
+            </div>
+            <div class="start-stat">
+              <span>船体</span>
+              <strong id="start-hull">Lv.0</strong>
+            </div>
+            <div class="start-stat">
+              <span>航速</span>
+              <strong id="start-speed">Lv.0</strong>
+            </div>
+            <div class="start-stat">
+              <span>火炮</span>
+              <strong id="start-damage">Lv.0</strong>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button id="start-btn" class="btn primary large" type="button">
+              开始航行
+            </button>
+            <button id="reset-save-start" class="btn ghost" type="button">
+              重置存档
+            </button>
+          </div>
+
+          <div class="controls-help">
+            <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / 方向键 航行</span>
+            <span><kbd>Space</kbd> 开炮</span>
+            <span><kbd>E</kbd> 停靠港口</span>
+            <span><kbd>Esc</kbd> 暂停</span>
+          </div>
+          <p class="touch-help">手机端：左侧虚拟摇杆航行，右侧按钮持续开炮。</p>
+          <p class="fine-print">
+            原创程序化几何体 · Three.js WebGL · 存档保存在当前浏览器
+          </p>
+        </div>
+      </div>
+
+      <div id="pause-screen" class="overlay screen is-hidden">
+        <div class="screen-card compact-card">
+          <p class="eyebrow">风暂时停了</p>
+          <h2>已暂停</h2>
+          <p class="subtitle">海面会等你回来。</p>
+          <div class="button-column">
+            <button id="pause-resume" class="btn primary" type="button">
+              继续航行
+            </button>
+            <button id="pause-restart" class="btn" type="button">
+              重新开始本航程
+            </button>
+            <button id="reset-save-pause" class="btn ghost" type="button">
+              重置存档
+            </button>
+          </div>
+          <p class="fine-print">
+            金币与升级会立即写入存档；重新开始不会清空它们。
+          </p>
+        </div>
+      </div>
+
+      <div id="harbor-screen" class="overlay screen harbor-overlay is-hidden">
+        <div class="screen-card harbor-card">
+          <div class="harbor-head">
+            <div>
+              <p class="eyebrow">安全水域 · 风港</p>
+              <h2>补给与船坞</h2>
+            </div>
+            <div class="harbor-coins">
+              <span class="coin-icon" aria-hidden="true">◈</span>
+              <span id="harbor-coins">0</span>
+            </div>
+          </div>
+          <p id="harbor-note" class="harbor-note">
+            船体已在船坞免费修复。强化会立即作用于海风号。
+          </p>
+          <div id="upgrade-list" class="upgrade-list"></div>
+          <div class="button-row harbor-actions">
+            <button id="leave-harbor-btn" class="btn primary" type="button">
+              再次出海
+            </button>
+            <button id="reset-save-harbor" class="btn ghost" type="button">
+              重置存档
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="result-screen" class="overlay screen is-hidden">
+        <div class="screen-card compact-card result-card">
+          <p id="result-eyebrow" class="eyebrow">航程结束</p>
+          <h2 id="result-title">船只沉没</h2>
+          <p id="result-detail" class="subtitle"></p>
+          <div class="button-column">
+            <button id="result-primary-btn" class="btn primary" type="button">
+              再战一次
+            </button>
+            <button
+              id="result-secondary-btn"
+              class="btn is-hidden"
+              type="button"
+            >
+              继续航行
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="fatal-error" class="overlay screen fatal-screen is-hidden" role="alert">
+        <div class="screen-card compact-card">
+          <p class="eyebrow">无法启航</p>
+          <h2>3D 画面初始化失败</h2>
+          <p id="fatal-message" class="subtitle">
+            请确认浏览器支持并启用了 WebGL，然后刷新页面重试。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

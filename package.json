@@ -1,0 +1,27 @@
+{
+  "name": "age-of-wind-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Age of Wind Web - original low-poly 3D naval combat MVP",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deploy:cf": "npm run build && npx wrangler@latest pages deploy dist --project-name age-of-wind-web"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/three": "^0.186.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}
